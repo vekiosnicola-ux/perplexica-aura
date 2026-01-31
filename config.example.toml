@@ -1,0 +1,33 @@
+# Perplexica configuration template
+# Copy this to config.toml and fill in your values
+
+[general]
+instance_name = "Aura Perplexica"
+
+[searxng]
+endpoint = "http://searxng:8080"
+
+[ai]
+# Available AI models (format: provider:model)
+# Providers: ollama, openai, anthropic, perplexity, groq
+models = [
+    "ollama:llama3.1",
+    "openai:gpt-4",
+    "anthropic:claude-3-haiku"
+]
+
+[api]
+# API keys (use environment variables in production)
+openai_api_key = "${OPENAI_API_KEY}"
+anthropic_api_key = "${ANTHROPIC_API_KEY}"
+perplexity_api_key = "${PERPLEXITY_API_KEY}"
+
+[search]
+# Default search behavior
+default_mode = "web"
+default_focus = "internet"
+
+[ui]
+# UI settings
+theme = "dark"
+language = "en"
