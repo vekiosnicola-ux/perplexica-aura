@@ -2,18 +2,24 @@
  * Perplexica Connector for Aura MCP
  * 
  * Provides AI-powered search with sources and citations.
- * Part of the Aura research stack.
+ * Uses Perplexica-Aura API (DuckDuckGo fallback)
+ * 
+ * Usage:
+ *   const result = await handlePerplexicaTool('perplexica_search', {
+ *     query: "AI orchestration best practices",
+ *     mode: "web"
+ *   });
  */
 
 import { z } from 'zod';
 
-// Perplexica API endpoint (can be configured via environment)
-const PERPLEXICA_API = process.env.PERPLEXICA_API_URL || 'http://localhost:3001';
+// API endpoint (configurable via environment)
+const PERPLEXICA_API = process.env.PERPLEXICA_API_URL || 'http://localhost:3002';
 
-// Search modes available in Perplexica
+// Search modes available
 export type SearchMode = 'web' | 'academic' | 'writing' | 'youtube';
 
-// Search focus options
+// Search focus options  
 export type SearchFocus = 'internet' | 'sources' | 'math' | 'code';
 
 /**
@@ -35,12 +41,20 @@ export const perplexicaTools = [
           enum: ['web', 'academic', 'writing', 'youtube'],
           description: 'Search mode: web (general), academic (research papers), writing (content), youtube (videos)',
           default: 'web'
-        },
-        focus: {
+        }
+      },
+      required: ['query']
+    }
+  },
+  {
+    name: 'perplexica_quick',
+    description: 'Quick search with condensed results (5 sources max)',
+    inputSchema: {
+      type: 'object', 
+      properties: {
+        query: {
           type: 'string',
-          enum: ['internet', 'sources', 'math', 'code'],
-          description: 'Search focus: internet (web), sources (cite sources), math (math problems), code (programming)',
-          default: 'internet'
+          description: 'Quick search query'
         }
       },
       required: ['query']
@@ -55,46 +69,81 @@ export async function handlePerplexicaTool(
   name: string,
   args: Record<string, any>
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
-  if (name !== 'perplexica_search') {
-    return {
-      content: [{ type: 'text', text: `Unknown Perplexica tool: ${name}` }],
-      isError: true
-    };
-  }
-
   try {
-    const { query, mode = 'web', focus = 'internet' } = args;
-
-    const response = await fetch(`${PERPLEXICA_API}/api/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        query,
-        mode,
-        focus
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Perplexica API error: ${response.statusText}`);
+    if (name === 'perplexica_search') {
+      return await perplexicaSearch(args.query, args.mode);
+    } else if (name === 'perplexica_quick') {
+      return await perplexicaQuick(args.query);
+    } else {
+      return {
+        content: [{ type: 'text', text: `Unknown Perplexica tool: ${name}` }],
+        isError: true
+      };
     }
-
-    const data = await response.json();
-
-    // Format response with sources
-    const formattedResponse = formatSearchResponse(data);
-
-    return {
-      content: [{ type: 'text', text: formattedResponse }]
-    };
   } catch (error: any) {
     return {
-      content: [{ type: 'text', text: `Perplexica search error: ${error.message}` }],
+      content: [{ type: 'text', text: `Perplexica error: ${error.message}` }],
       isError: true
     };
   }
+}
+
+/**
+ * Full search with all sources
+ */
+async function perplexicaSearch(
+  query: string,
+  mode: string = 'web'
+): Promise<{ content: Array<{ type: string; text: string }> }> {
+  const response = await fetch(`${PERPLEXICA_API}/api/search`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Perplexica API error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const formatted = formatSearchResponse(data);
+
+  return {
+    content: [{ type: 'text', text: formatted }]
+  };
+}
+
+/**
+ * Quick search with condensed results
+ */
+async function perplexicaQuick(
+  query: string
+): Promise<{ content: Array<{ type: string; text: string }> }> {
+  const response = await fetch(`${PERPLEXICA_API}/api/quick?q=${encodeURIComponent(query)}`);
+
+  if (!response.ok) {
+    throw new Error(`Perplexica API error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  
+  const lines: string[] = [];
+  
+  if (data.answer) {
+    lines.push(`## Answer\n${data.answer}`);
+  }
+  
+  if (data.sources && data.sources.length > 0) {
+    lines.push(`\n## Sources (${data.sources.length})`);
+    data.sources.forEach((s: any, i: number) => {
+      lines.push(`${i + 1}. [${s.title}](${s.url})`);
+    });
+  }
+
+  return {
+    content: [{ type: 'text', text: lines.join('\n') }]
+  };
 }
 
 /**
@@ -102,6 +151,12 @@ export async function handlePerplexicaTool(
  */
 function formatSearchResponse(data: any): string {
   const lines: string[] = [];
+
+  // Query info
+  lines.push(`## Search: "${data.query}"`);
+  lines.push(`Mode: ${data.mode || 'web'}`);
+  lines.push(`Timestamp: ${data.timestamp || new Date().toISOString()}`);
+  lines.push('');
 
   // Answer
   if (data.answer) {
@@ -112,14 +167,14 @@ function formatSearchResponse(data: any): string {
 
   // Sources
   if (data.sources && data.sources.length > 0) {
-    lines.push('## Sources');
+    lines.push(`## Sources (${data.sources.length})`);
     data.sources.forEach((source: any, index: number) => {
       lines.push(`${index + 1}. [${source.title}](${source.url})`);
     });
     lines.push('');
   }
 
-  // Related queries
+  // Related (if available)
   if (data.related && data.related.length > 0) {
     lines.push('## Related Queries');
     data.related.forEach((q: string) => {
@@ -131,17 +186,12 @@ function formatSearchResponse(data: any): string {
 }
 
 /**
- * Quick search (no mode/focus customization)
+ * Quick search (for internal use)
  */
 export async function quickSearch(
   query: string
 ): Promise<{ answer: string; sources: Array<{ title: string; url: string }> }> {
-  const response = await fetch(`${PERPLEXICA_API}/api/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query })
-  });
-
+  const response = await fetch(`${PERPLEXICA_API}/api/quick?q=${encodeURIComponent(query)}`);
   const data = await response.json();
 
   return {
@@ -151,4 +201,16 @@ export async function quickSearch(
       url: s.url
     }))
   };
+}
+
+/**
+ * Health check for Perplexica API
+ */
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${PERPLEXICA_API}/health`);
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
