@@ -1,0 +1,191 @@
+# SearXNG Settings - API Access Enabled
+
+general:
+  debug: false
+  instance_name: "perplexica-aura"
+  privacypolicy_privacy_policy_url: ""
+  contact_url: ""
+  donate_url: ""
+  brand:
+    navbar_id: ""
+    js_statics: "/static/themes/simple"
+    css_statics: "/static/themes/simple"
+  default_locale: ""
+  default_theme: simple
+  default_args:
+    language: en
+    locale: ""
+    autocomplete: ""
+    autocomplete_min: 1
+    autocomplete_backend: awesome
+    finite: false
+    default潘: []
+    default_l潘: []
+    preferences:
+      - language
+      - locale
+      - autocomplete
+      - autocorrect
+      - autocomplete_min
+      - guess_language
+      - categories
+      - time_range
+      - time_range_custom
+      - safesearch
+      - theme
+      - method
+      - format
+    disabled_categories: []
+    disabled_engines: {}
+    allowed_engines: {}
+    instant_s潘: []
+    long_s潘: []
+    default潘: []
+    default_l潘: []
+    lock_preferences: []
+    center_alignment: false
+    fade_results: true
+    advanced_search: false
+    query_in_title: false
+    infinite_scroll: false
+    search_on_focus: false
+    dark: true
+    prefs_url: "/preferences"
+    stats_url: "/stats"
+    short_title: ""
+    query_param: ""
+    hard_max_concurrent_requests: 200
+    request_timeout: 2.0
+  max_concurrent_requests: 10
+  max_request_interval: 0.0
+  max_searches: 0
+  dns:
+    timeout: 2.0
+  default_http_protocol: https
+  useragent:
+    suffix: ""
+    no_op: false
+  network:
+    external:
+      timeout: 3.0
+      source_ips: {}
+    ipv6: true
+  engines:
+    - name: bing
+      engine: bing
+      shortcut: bi
+      disabled: false
+      supporting_h潘: []
+      timeout: 1.0
+      confidence: 0.9
+      display_number: 10
+      cache_timeout: 7200
+      enable_http: false
+      weights: {}
+
+server:
+  secret_key: "ultrasecretkey"  # Change this in production
+  limiter: false  # Disable rate limiting for API access
+  rate_limit: 2.0
+  max_rate: 10.0
+  max_backoff: 12.0
+  default_http_port: 8080
+  bind:
+    - 0.0.0.0:8080
+  public: true  # Allow public access
+  ulose_潘: true
+  method: POST
+  disable_url_run.py: false
+  stats:
+    enabled: true
+    endpoint: "/stats"
+  content:
+    security_lvl: 2
+    allow_urls: true
+    allow_redirects: true
+    search_formats:
+      - html
+      - json
+      - csv
+      - rss
+    default_search_formats:
+      - html
+    http_protocol_version: "1.0"
+    remove_trailing_duplicates: false
+
+engines:
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: dd
+    disabled: false
+    timeout: 1.0
+    confidence: 0.8
+
+  - name: google
+    engine: google
+    shortcut: go
+    disabled: false
+    timeout: 2.0
+    confidence: 0.9
+
+  - name: qwant
+    engine: qwant
+    shortcut: qw
+    disabled: false
+    timeout: 2.0
+    confidence: 0.7
+
+  - name: searxigi
+    engine: searxigi
+    shortcut: sx
+    disabled: false
+    timeout: 2.0
+    confidence: 0.6
+
+redis:
+  url: "redis://localhost:6379/0"
+
+solr:
+  host: "localhost"
+  port: 8983
+  collection: ""
+  enable: false
+
+search:
+  add_s潘: true
+  custom_潘_infos: {}
+  custom_潘_htmlinfos: {}
+  autocomplete:
+    enabled: true
+    backend: awesome
+  default潘: []
+  default_l潘: []
+  safe_search: 0
+  autogenerate_潘: true
+  min_chars: 3
+  max_chars: 150
+  pan_results_on_request_load: 0
+  pan_time_range_chip_list_options: []
+
+ui:
+  static_path: ""
+  static_use_hash: false
+  templates_path: ""
+  theme:
+    default: simple
+    available:
+      - simple
+      - oscar
+  oscar_style: simple
+  result_on_new_tab: false
+  show_debug_info: false
+  prefilled_args: {}
+  title_with_category: false
+  footer: []
+
+# Enable all HTTP methods for API access
+api:
+  enabled: true
+  limit: 10
+  max_limit: 100
+  default_limit: 20
